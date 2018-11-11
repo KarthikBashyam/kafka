@@ -16,6 +16,8 @@ import com.fasterxml.jackson.databind.node.ObjectNode;
 
 public class BankBalanceProducer {
 
+	private static final String TOPIC_NAME = "bank-transactions";
+
 	public static void main(String[] args) {
 
 		Properties properties = new Properties();
@@ -50,10 +52,10 @@ public class BankBalanceProducer {
 		ObjectNode transaction = JsonNodeFactory.instance.objectNode();
 		int amount = ThreadLocalRandom.current().nextInt(0, 100);
 		transaction.put("name", name);
-		transaction.put("amount", 100);
+		transaction.put("amount", amount);
 		transaction.put("time", Instant.now().toString());
 		System.out.println(name + " : "+amount);
-		return new ProducerRecord<String, String>("bank-transactions", name, transaction.toString());
+		return new ProducerRecord<String, String>(TOPIC_NAME, name, transaction.toString());
 	}
 
 }
