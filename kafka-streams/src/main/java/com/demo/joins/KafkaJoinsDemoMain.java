@@ -1,6 +1,7 @@
 package com.demo.joins;
 
 import java.util.Properties;
+import java.util.concurrent.TimeUnit;
 
 import org.apache.kafka.common.serialization.Deserializer;
 import org.apache.kafka.common.serialization.Serde;
@@ -10,6 +11,8 @@ import org.apache.kafka.streams.KafkaStreams;
 import org.apache.kafka.streams.StreamsBuilder;
 import org.apache.kafka.streams.StreamsConfig;
 import org.apache.kafka.streams.kstream.Consumed;
+import org.apache.kafka.streams.kstream.JoinWindows;
+import org.apache.kafka.streams.kstream.Joined;
 import org.apache.kafka.streams.kstream.KStream;
 
 /**
@@ -30,13 +33,22 @@ public class KafkaJoinsDemoMain {
 		
 		Deserializer<Product> productDes = new ProductDeserializer(); 
 		Serializer<Product> productSer = new ProductSerializer(); 
+		Deserializer<ProductSalesInfo> productSalesDes = new ProductSalesInfoDeserializer(); 
+		Serializer<ProductSalesInfo> productSalesSer = new ProductSalesInfoSerializer(); 
 		
 		Serde<Product> productSerde = Serdes.serdeFrom(productSer,productDes);
+		Serde<ProductSalesInfo> productSalesSerde = Serdes.serdeFrom(productSalesSer, productSalesDes);
 		
 		KStream<String, Product> productsStream = builder.stream("products", Consumed.with(Serdes.String(), productSerde));
-		//KStream<String, ProductSalesInfo> productsSalesStream = builder.stream("products-sales");
+		KStream<String, ProductSalesInfo> productsSalesStream = builder.stream("products-sales", Consumed.with(Serdes.String(),productSalesSerde));
+		
+		KStream<String, String> productCountStream = productsStream.outerJoin(productsSalesStream, 
+								(product, sales) -> {	return computeSales(sales);}, 
+								JoinWindows.of(TimeUnit.MINUTES.toMinutes(60)),
+								Joined.with(Serdes.String(), productSerde, productSalesSerde)								
+								);
 
-		productsStream.foreach((key, value) -> System.out.println("Key: " + key + ", Product :"+ value.getPrice()));
+		productCountStream.foreach((key, value) -> System.out.println("Key: " + key + ", Product Sales:"+ value));
 
 		KafkaStreams kafkaStreams = new KafkaStreams(builder.build(), config);
 
@@ -45,6 +57,14 @@ public class KafkaJoinsDemoMain {
 
 		Runtime.getRuntime().addShutdownHook(new Thread(kafkaStreams::close));
 		System.out.println("============== JOINS STREAMS STARTED ====================");
+	}
+
+	private static String computeSales(ProductSalesInfo sales) {
+		if (sales != null) {
+			return sales.getCount().toString();
+		} else {
+			return "0";
+		}
 	}
 
 }

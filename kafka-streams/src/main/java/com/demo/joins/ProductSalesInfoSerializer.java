@@ -7,7 +7,7 @@ import org.apache.kafka.common.serialization.Serializer;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
-public class ProductSerializer implements Serializer<Product> {
+public class ProductSalesInfoSerializer implements Serializer<ProductSalesInfo> {
 	
 	private ObjectMapper objectMapper = null;
 
@@ -17,7 +17,7 @@ public class ProductSerializer implements Serializer<Product> {
 	}
 
 	@Override
-	public byte[] serialize(String topic, Product data) {
+	public byte[] serialize(String topic, ProductSalesInfo data) {
 		try {
 			objectMapper = new ObjectMapper();
 			return objectMapper.writeValueAsBytes(data);

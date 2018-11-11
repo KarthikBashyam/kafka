@@ -10,6 +10,10 @@ public class ProductSalesInfo {
 
 	private Long count;
 
+	public ProductSalesInfo() {
+		super();
+	}
+
 	public ProductSalesInfo(Long id, String name, String customer, Long count) {
 		super();
 		this.id = id;
